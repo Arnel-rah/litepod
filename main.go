@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
+	"github.com/docker/go-connections/nat"
 )
 
 func main() {
@@ -14,11 +16,27 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println("Starting Litepod container...")
+	fmt.Println("Starting Litepod container with Port Mapping...")
+
+	hostBinding := nat.PortBinding{
+		HostIP:   "0.0.0.0",
+		HostPort: "8080",
+	}
+	containerPort, _ := nat.NewPort("tcp", "8080")
+
+	portMap := nat.PortMap{
+		containerPort: []nat.PortBinding{hostBinding},
+	}
 
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: "codercom/code-server",
-	}, nil, nil, nil, "")
+		ExposedPorts: nat.PortSet{
+			containerPort: struct{}{},
+		},
+	}, &container.HostConfig{
+		PortBindings: portMap,
+	}, nil, nil, "")
+
 	if err != nil {
 		panic(err)
 	}
@@ -27,5 +45,6 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf(" Container started with ID: %s\n", resp.ID)
+	fmt.Printf(" Container started! Access it at http://localhost:8080\n")
+	fmt.Printf("ID: %s\n", resp.ID)
 }
