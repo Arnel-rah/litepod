@@ -30,6 +30,9 @@ func main() {
 
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: "codercom/code-server",
+		Env: []string{
+			"PASSWORD=admin123",
+		},
 		ExposedPorts: nat.PortSet{
 			containerPort: struct{}{},
 		},
