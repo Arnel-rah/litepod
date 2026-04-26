@@ -18,13 +18,18 @@ func main() {
 	}
 	projectPath, _ := filepath.Abs(os.Args[1])
 
+	password := os.Getenv("LITEPOD_PASSWORD")
+	if password == "" {
+		password = "admin_default_123"
+	}
+
 	ctx := context.Background()
 	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("Starting Litepod for: %s\n", projectPath)
+	fmt.Printf("Litepod Cloud-Ready starting for: %s\n", projectPath)
 
 	containerPort, _ := nat.NewPort("tcp", "8080")
 	portMap := nat.PortMap{
@@ -33,7 +38,8 @@ func main() {
 
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: "codercom/code-server",
-		Env:   []string{"PASSWORD=admin123"},
+		Env:   []string{"PASSWORD=" + password},
+		WorkingDir: "/home/coder/project",
 		ExposedPorts: nat.PortSet{containerPort: struct{}{}},
 	}, &container.HostConfig{
 		PortBindings: portMap,
@@ -50,6 +56,6 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("Container started! Access it at http://localhost:8080\n")
-	fmt.Printf("ID: %s\n", resp.ID)
+	fmt.Printf("Remote IDE started!\n")
+	fmt.Printf("Password is: %s\n", password)
 }
