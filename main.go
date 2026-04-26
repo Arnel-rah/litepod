@@ -47,7 +47,7 @@ func main() {
 	}
 
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
-		Image: "codercom/code-server",
+		Image: "litepod-node",
 		Env:   []string{"PASSWORD=" + password},
 		Labels: map[string]string{
 			"app": "litepod",
@@ -71,4 +71,5 @@ func main() {
 
 	fmt.Printf("Remote IDE started!\n")
 	fmt.Printf("Password is: %s\n", password)
+	fmt.Printf("Access it at http://localhost:8080 (or via your Ngrok URL)\n")
 }
