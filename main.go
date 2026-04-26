@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 )
@@ -20,7 +21,7 @@ func main() {
 
 	password := os.Getenv("LITEPOD_PASSWORD")
 	if password == "" {
-		password = "admin_default_123"
+		password = "admin123"
 	}
 
 	ctx := context.Background()
@@ -31,6 +32,15 @@ func main() {
 
 	fmt.Printf("Litepod Cloud-Ready starting for: %s\n", projectPath)
 
+	f := filters.NewArgs()
+	f.Add("label", "app=litepod")
+	containers, _ := cli.ContainerList(ctx, container.ListOptions{All: true, Filters: f})
+
+	for _, c := range containers {
+		fmt.Printf("Cleaning up old container %s...\n", c.ID[:10])
+		cli.ContainerRemove(ctx, c.ID, container.RemoveOptions{Force: true})
+	}
+
 	containerPort, _ := nat.NewPort("tcp", "8080")
 	portMap := nat.PortMap{
 		containerPort: []nat.PortBinding{{HostIP: "0.0.0.0", HostPort: "8080"}},
@@ -39,7 +49,10 @@ func main() {
 	resp, err := cli.ContainerCreate(ctx, &container.Config{
 		Image: "codercom/code-server",
 		Env:   []string{"PASSWORD=" + password},
-		WorkingDir: "/home/coder/project",
+		Labels: map[string]string{
+			"app": "litepod",
+		},
+		WorkingDir:   "/home/coder/project",
 		ExposedPorts: nat.PortSet{containerPort: struct{}{}},
 	}, &container.HostConfig{
 		PortBindings: portMap,
